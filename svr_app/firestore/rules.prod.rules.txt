@@ -1,0 +1,123 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isSuperAdmin() {
+      return request.auth.token.role == 'super_admin';
+    }
+    
+    function isUser() {
+      return request.auth.token.role == 'user';
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isDeviceAssignedToUser(deviceId) {
+      return exists(/databases/$(database)/documents/devices/$(deviceId)) &&
+             resource.data.assignedUserId == request.auth.uid;
+    }
+    
+    function isValidUserData(data) {
+      return data.keys().hasAll(['email', 'displayName', 'role', 'status']) &&
+             data.email is string &&
+             data.displayName is string &&
+             data.role in ['super_admin', 'user'] &&
+             data.status in ['Active', 'Inactive', 'Pending'];
+    }
+    
+    function isValidDeviceData(data) {
+      return data.keys().hasAll(['name', 'location', 'status']) &&
+             data.name is string &&
+             data.location is string &&
+             data.status in ['Online', 'Offline', 'Faulty'];
+    }
+    
+    function isValidAlertData(data) {
+      return data.keys().hasAll(['type', 'message', 'deviceId', 'userId', 'priority', 'status']) &&
+             data.type in ['SOS', 'Help'] &&
+             data.priority in ['High', 'Medium', 'Low'] &&
+             data.status in ['Active', 'Resolved'];
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isSuperAdmin() || isOwner(userId));
+      allow create: if isAuthenticated() && isSuperAdmin() && isValidUserData(resource.data);
+      allow update: if isAuthenticated() && (isSuperAdmin() || isOwner(userId)) && 
+                   (isSuperAdmin() || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'lastLoginAt']));
+      allow delete: if isAuthenticated() && isSuperAdmin();
+    }
+    
+    // Devices collection
+    match /devices/{deviceId} {
+      allow read: if isAuthenticated() && (isSuperAdmin() || isDeviceAssignedToUser(deviceId));
+      allow create: if isAuthenticated() && isSuperAdmin() && isValidDeviceData(resource.data);
+      allow update: if isAuthenticated() && isSuperAdmin();
+      allow delete: if isAuthenticated() && isSuperAdmin();
+      
+      // Device logs subcollection
+      match /logs/{logId} {
+        allow read: if isAuthenticated() && (isSuperAdmin() || isDeviceAssignedToUser(deviceId));
+        allow write: if isAuthenticated() && isSuperAdmin();
+      }
+    }
+    
+    // Alerts collection
+    match /alerts/{alertId} {
+      allow read: if isAuthenticated() && (
+        isSuperAdmin() || 
+        resource.data.userId == request.auth.uid ||
+        isDeviceAssignedToUser(resource.data.deviceId)
+      );
+      allow create: if isAuthenticated() && isValidAlertData(resource.data);
+      allow update: if isAuthenticated() && (
+        isSuperAdmin() || 
+        (resource.data.userId == request.auth.uid && 
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'resolution']))
+      );
+      allow delete: if isAuthenticated() && isSuperAdmin();
+    }
+    
+    // Notifications collection
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && (
+        isSuperAdmin() || 
+        resource.data.recipients == 'All Users' ||
+        (resource.data.recipients == 'Active Users' && request.auth.token.role == 'user') ||
+        (resource.data.recipients == 'Device Admins' && request.auth.token.role == 'user') ||
+        (resource.data.recipients == 'Super Admins' && request.auth.token.role == 'super_admin')
+      );
+      allow create: if isAuthenticated() && isSuperAdmin() &&
+                   resource.data.keys().hasAll(['title', 'message', 'recipients', 'status']);
+      allow update: if isAuthenticated() && isSuperAdmin();
+      allow delete: if isAuthenticated() && isSuperAdmin();
+    }
+    
+    // Activity logs collection
+    match /activity_logs/{logId} {
+      allow read: if isAuthenticated() && isSuperAdmin();
+      allow create: if isAuthenticated() && 
+                   resource.data.keys().hasAll(['actorUserId', 'type', 'message', 'targetRef']);
+      allow update, delete: if isAuthenticated() && isSuperAdmin();
+    }
+    
+    // Settings collection
+    match /settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isSuperAdmin();
+    }
+    
+    // Stats collection
+    match /stats/{statId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isSuperAdmin();
+    }
+  }
+}

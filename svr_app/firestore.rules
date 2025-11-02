@@ -1,0 +1,152 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isSuperAdmin() {
+      // Check custom claims first
+      return request.auth.token.role == 'super_admin' ||
+             // Check email patterns
+             request.auth.token.email.matches('.*superadmin.*') ||
+             request.auth.token.email.matches('.*admin[^@]*@.*') ||
+             request.auth.token.email.matches('.*@.*admin.*') ||
+             // Check Firestore user document as fallback
+             (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin');
+    }
+
+    function isUser() {
+      return request.auth.token.role == 'user' ||
+             !('role' in request.auth.token) ||
+             (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'user');
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function canAccessNotification(notificationData) {
+      return notificationData.recipientType == 'all' ||
+             (notificationData.recipientType == 'user' && notificationData.recipientId == request.auth.uid) ||
+             (notificationData.recipientType == 'admin' && isSuperAdmin());
+    }
+
+    // Allow access to all collections for super admins
+    match /{document=**} {
+      allow read, write, delete: if isAuthenticated() && isSuperAdmin();
+    }
+
+    // Notifications collection rules - Primary rules
+    match /notifications/{notificationId} {
+      // Allow reading notifications for all authenticated users
+      allow read: if isAuthenticated();
+
+      // Only super admins can create notifications
+      allow create: if isAuthenticated() && isSuperAdmin();
+
+      // Allow all authenticated users to update notifications for now (temporary fix)
+      allow update: if isAuthenticated();
+
+      // Only super admins can delete notifications
+      allow delete: if isAuthenticated() && isSuperAdmin();
+
+      // Notification deliveries subcollection
+      match /deliveries/{userId} {
+        allow read, write: if isAuthenticated() && (isSuperAdmin() || isOwner(userId));
+      }
+    }
+
+    // Dashboard stats collection
+    match /dashboard_stats/{statId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isSuperAdmin();
+    }
+
+    // Recent activity collection
+    match /activity/{activityId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isSuperAdmin();
+    }
+
+    // Alerts collection
+    match /alerts/{alertId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && isSuperAdmin();
+      allow delete: if isAuthenticated() && isSuperAdmin();
+    }
+
+    function isDeviceAssignedToUser() {
+      return resource.data.assignedUserId == request.auth.uid;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isSuperAdmin() || isOwner(userId));
+      allow list: if isAuthenticated() && isSuperAdmin(); // Allow super admins to list/query users
+      allow create: if isAuthenticated() && (isSuperAdmin() || isOwner(userId)); // Allow users to create their own profile
+      allow update: if isAuthenticated() && (isSuperAdmin() || isOwner(userId));
+      allow delete: if isAuthenticated() && isSuperAdmin();
+
+      // User notification status subcollection
+      match /notification_status/{notificationId} {
+        allow read: if isAuthenticated() && isOwner(userId);
+        allow write: if isAuthenticated() && isOwner(userId);
+      }
+    }
+
+    // Devices collection
+    match /devices/{deviceId} {
+      allow read: if isAuthenticated() && (isSuperAdmin() || resource.data.assignedUserId == request.auth.uid);
+      allow create: if isAuthenticated() &&
+                       request.resource.data.assignedUserId == request.auth.uid &&
+                       request.resource.data.keys().hasAll(['created_at', 'room', 'location', 'deviceId']);
+      allow update: if isAuthenticated() && (isSuperAdmin() || resource.data.assignedUserId == request.auth.uid);
+      allow delete: if isAuthenticated() && (isSuperAdmin() || resource.data.assignedUserId == request.auth.uid);
+
+      // Device logs subcollection
+      match /logs/{logId} {
+        allow read: if isAuthenticated() && (isSuperAdmin() || get(/databases/$(database)/documents/devices/$(deviceId)).data.assignedUserId == request.auth.uid);
+        allow write: if isAuthenticated() && isSuperAdmin();
+      }
+    }
+
+    // Alerts collection
+    match /alerts/{alertId} {
+      allow read: if isAuthenticated() && (
+        isSuperAdmin() ||
+        resource.data.userId == request.auth.uid ||
+        get(/databases/$(database)/documents/devices/$(resource.data.deviceId)).data.assignedUserId == request.auth.uid
+      );
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (isSuperAdmin() || resource.data.userId == request.auth.uid);
+      allow delete: if isAuthenticated() && isSuperAdmin();
+    }
+
+
+
+    // Activity logs collection
+    match /activity_logs/{logId} {
+      allow read: if isAuthenticated() && isSuperAdmin();
+      allow create: if isAuthenticated() && (isSuperAdmin() || isUser());
+      allow update, delete: if isAuthenticated() && isSuperAdmin();
+    }
+
+    // Settings collection
+    match /settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isSuperAdmin();
+    }
+
+    // Stats collection (for dashboard)
+    match /stats/{statId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isSuperAdmin();
+    }
+  }
+}

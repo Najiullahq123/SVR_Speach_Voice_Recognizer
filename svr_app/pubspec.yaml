@@ -1,0 +1,53 @@
+name: svr_app
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.1.0+2
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  firebase_core: ^3.15.2
+  firebase_auth: ^5.7.0
+  cloud_functions: ^5.6.2
+  cloud_firestore: ^5.6.12
+  firebase_messaging: ^15.2.10  # For push notifications on alerts
+  firebase_storage: ^12.4.10  # For storing logs/images if needed
+  flutter_local_notifications: ^17.0.0  # Local handling of alerts
+  # Device Provisioning Dependencies
+  mobile_scanner: ^3.5.2  # QR scanner with better platform support
+  permission_handler: ^12.0.1  # Updated to latest version
+  connectivity_plus: ^7.0.0  # Updated to latest version
+  http: ^1.5.0  # Updated to latest version
+  shared_preferences: ^2.3.2  # For local storage of user preferences
+  # Report Generation Dependencies
+  pdf: ^3.10.7  # For PDF report generation
+  excel: ^4.0.3  # For Excel report generation
+  path_provider: ^2.1.4  # For file system access
+  share_plus: ^10.1.2  # For sharing generated reports
+  intl: ^0.19.0  # For date formatting
+  universal_html: ^2.2.4  # For web file downloads
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_launcher_icons: ^0.13.1
+  flutter_lints: ^5.0.0
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/app_icon.png"
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/splash_image.png
+    - assets/images/logo.png
+    - assets/images/logo1.png
+    - assets/images/

@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "119820460667",
+    "firebase_url": "https://svr-app-96763-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "svr-app-96763",
+    "storage_bucket": "svr-app-96763.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:119820460667:android:6f9c98a326f6ca85f238de",
+        "android_client_info": {
+          "package_name": "com.example.svr_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAXs_X-_Yn6IU9yx-yQDNlBenSjWhEvxp4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,108 @@
+# Environment variables
+.env
+.env.*
+
+# Sensitive files
+**/textconverter.py
+
+# Python
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+
+# Build and temp folders
+build/
+dist/
+*.egg-info/
+*.egg
+*.log
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Flutter/Dart specific
+*.lock
+pubspec.lock
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub/
+.dart_tool/
+
+# Others
+*.apk
+*.aab
+*.ipa
+*.jks
+*.keystore
+*.key
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+pgliteData/
+
+# Ignore all build output folders
+**/build/
+
+# Ignore other common IDE/build files (optional)
+*.iml
+.gradle/
+.idea/
+
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/build/debug
+/android/app/build/profile
+/android/app/build/release
+
+git add .gitignore
+git commit -m "Add comprehensive .gitignore to ignore build and IDE files"
