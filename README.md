@@ -17,7 +17,7 @@
  1. Open a terminal in this folder:
  
  ```powershell
- cd "D:\SVR Project\New folder\SVR_Project\svr_app"
+ cd "your folder path"
  ```
  
  2. Install dependencies:
